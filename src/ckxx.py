@@ -1,11 +1,12 @@
 # -*- coding: UTF-8 -*-
 
-import chardet
 import os
 import re
 import time
-from bs4 import BeautifulSoup
 from urllib import urlopen, urlretrieve
+
+import chardet
+from bs4 import BeautifulSoup
 
 ckxx_home = r'http://www.hqck.net'
 
@@ -30,8 +31,12 @@ def get_all_daily(daily_ul):
 
 
 def get_today(daily_ul):
-    today_str = time.strftime("%Y-%m-%d", time.localtime())
+    today_str = get_today_in_short()
     return daily_ul.find(text=re.compile(".* %s.*" % today_str))
+
+
+def get_today_in_short():
+    return time.strftime("%Y-%m-%d", time.localtime())
 
 
 def get_recent(bs):
@@ -43,6 +48,8 @@ def get_img_dict(start_page_url):
     bs = get_bs(start_page_url)
     base_url = start_page_url.split('/')
     base_url.pop()
+
+    # 两个导航，选择第二个
     links = bs.select("div.paging > ul")[1]
     # print links
     for li in links.find_all(text=re.compile("^\d+$")):
@@ -69,28 +76,35 @@ def download_img(title, img_dict, dst_path):
         dl_img(v, dist_name)
 
 
+def show_paper_dict():
+    for (k, v) in paper_dict.items():
+        print "%s -- %s" % (k, v)
+
+
 if __name__ == "__main__":
     bs = get_bs(ckxx_home)
+
+    # 找到主页的报纸列表
     daily_ul = bs.find(name='ul', class_='baozhi-list')
     # get_all_daily(daily_ul)
+    # show_paper_dict()
+    # exit(0)
 
-    # get today
-    # today_paper = get_today(daily_ul)
-    # print today_paper.parent.parent['href']
-    # print today_paper
+    # 获取今天的报纸,正则方式
+    today_paper = get_today(daily_ul)
+    # print "%s -- %s" % (today_paper.string, today_paper.parent.parent['href'])
+    # exit(0)
 
-    # get recent
+    # 获取今天的报纸，CSS选择器
     recent_paper = get_recent(bs)
     # print recent_paper
     recent_home_url = "%s%s" % (ckxx_home, recent_paper.parent['href'])
     # print recent_home_url
 
+    # 获取报纸的图片链接
     img_dict = get_img_dict(recent_home_url)
     # print img_dict
 
-    title = 'test'
+    title = get_today_in_short()
     dst_path = r'd:/'
     download_img(title, img_dict, dst_path)
-
-    # for (k, v) in paper_dict.items():
-    #     print "%s -- %s" % (k, v)
